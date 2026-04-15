@@ -8,8 +8,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/shoppal
-    username: franklin
-    password: leedbpa22wd
+    username: shoppal_user
+    password: vG79xAe3bybahOUIvScJ41KoWsqrYHSr
     driver-class-name: org.postgresql.Driver
 
 
