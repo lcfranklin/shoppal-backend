@@ -15,6 +15,7 @@ import java.util.List;
 public class DashboardService {
     private final ProductService productService;
     private final SaleService saleService;
+    private final RevenueAdjustmentRepository revenueAdjustmentRepository;
 
     public StatsResponse getStats() {
         List<Product> products = productService.getAllProducts();
@@ -24,15 +25,30 @@ public class DashboardService {
                 .map(Sale::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        BigDecimal totalAdjustments = revenueAdjustmentRepository.findAll().stream()
+                .map(RevenueAdjustment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal netRevenue = totalRevenue.subtract(totalAdjustments);
+
         long lowStockCount = products.stream()
                 .filter(p -> p.getStockQuantity() < 10)
                 .count();
 
         return StatsResponse.builder()
-                .totalRevenue(totalRevenue)
+                .totalRevenue(netRevenue)
                 .totalSales((long) sales.size())
                 .totalProducts((long) products.size())
                 .lowStockItems(lowStockCount)
                 .build();
+    }
+
+    public void addRevenueAdjustment(BigDecimal amount, String reason) {
+        RevenueAdjustment adjustment = RevenueAdjustment.builder()
+                .amount(amount)
+                .reason(reason)
+                .date(java.time.LocalDateTime.now())
+                .build();
+        revenueAdjustmentRepository.save(adjustment);
     }
 }
