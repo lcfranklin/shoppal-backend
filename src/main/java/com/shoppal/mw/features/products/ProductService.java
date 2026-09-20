@@ -2,6 +2,8 @@ package com.shoppal.mw.features.products;
 
 import com.shoppal.mw.features.sales.SaleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +20,24 @@ public class ProductService {
     }
 
     public Product addProduct(Product product) {
-        return productRepository.save(product);
+        if (product == null) {
+            throw new IllegalArgumentException("Product must not be null");
+        }
+
+        try {
+            return productRepository.save(product);
+        } catch (DataIntegrityViolationException e) {
+            String causeMessage = e.getMostSpecificCause().getMessage();
+            throw new ProductNotCreatedException(
+                    "Product could not be created: " + causeMessage, e);
+        } catch (DataAccessException e) {
+            throw new ProductNotCreatedException("Product could not be created", e);
+        }
     }
 
     public Product getProductById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
     }
 
     public Product updateProduct(Long id, Product productDetails) {
